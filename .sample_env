@@ -1,0 +1,4 @@
+DEBUG=on
+SECRET_KEY=<your-secretkey>
+ALLOWED_HOSTS=localhost
+DATABASE_URL=psql://roomone:passwd@db:5432/roomone
