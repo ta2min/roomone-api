@@ -43,6 +43,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #3rd party
+    'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'allauth',
+    'allauth.account',
+    'dj_rest_auth.registration',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+
+    # MyApps
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -82,6 +95,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
         'default': env.db(),
 }
+
+# AUTH_USER_MODEL = 'accounts.models.User'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -125,3 +140,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media_root')
+
+SITE_ID = 1
+
+# GitHub OAuth Setting
+CALLBACK_URL = env('GITHUB_CALLBACK_URL')
+
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'SCOPE': [
+            'read:user',
+        ],
+    }
+}
