@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
     # MyApps
     'accounts.apps.AccountsConfig',
+    'teams.apps.TeamsConfig',
 ]
 
 MIDDLEWARE = [
