@@ -20,6 +20,7 @@ class Team(models.Model):
 class Member(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True)
+    owner = models.BooleanField('チーム所有者', default=False)
     account = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     name = models.CharField('名前', max_length=20)
     student_number = models.CharField(
