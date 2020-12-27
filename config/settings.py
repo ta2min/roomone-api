@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'teams.apps.TeamsConfig',
     'apiv1.apps.ApiV1Config',
+    'access.apps.AccessConfig',
 ]
 
 MIDDLEWARE = [
