@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     # MyApps
     'accounts.apps.AccountsConfig',
     'teams.apps.TeamsConfig',
+    'apiv1.apps.ApiV1Config',
 ]
 
 MIDDLEWARE = [
@@ -154,3 +155,31 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     }
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
+
+if DEBUG:
+    def show_toolbar(request):
+        return False
+
+
+    INSTALLED_APPS += (
+        'debug_toolbar',
+    )
+    MIDDLEWARE += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': show_toolbar,
+    }
+
+    INSTALLED_APPS += (
+    'django_extensions',
+    )
