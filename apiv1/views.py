@@ -1,10 +1,12 @@
+from django.db.models import Q
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 from teams.models import (
     Team,
     Member,
 )
-from .serializers import TeamSerializer
+from .serializers import TeamSerializer, MemberSerializer
 from .permissions import IsTeamOwner
 
 
@@ -26,3 +28,27 @@ class TeamViewSet(viewsets.ModelViewSet):
             name=self.request.user.username,
             join_date=timezone.now(),
         )
+
+
+class MemberViewSet(viewsets.ModelViewSet):
+    serializer_class = MemberSerializer
+
+    def get_permissions(self):
+        if self.action != 'list':
+            self.permission_classes += [IsTeamOwner]
+        return [permission() for permission in self.permission_classes]
+
+    def get_queryset(self):
+        joined_teams = [m.team for m in Member.objects.filter(account=self.request.user)]
+        q_teams = [Q(team=team) for team in joined_teams]
+        query = Q()
+        for q_team in q_teams:
+            query |= q_team
+        return Member.objects.filter(query).order_by('team')
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
