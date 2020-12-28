@@ -1,12 +1,19 @@
+from django.core import serializers
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import viewsets, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from teams.models import (
     Team,
     Member,
 )
-from .serializers import TeamSerializer, MemberSerializer
+from access.models import Access
+from .serializers import (
+    AccessSerializer,
+    TeamSerializer,
+    MemberSerializer,
+)
 from .permissions import IsTeamOwner
 
 
@@ -52,3 +59,21 @@ class MemberViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class AccessRecordView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = AccessSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        member = Member.objects.get(
+            team=serializer.validated_data.get('team'),
+            student_number=serializer.validated_data.get('student_number')
+        )
+        
+        access = Access.objects.filter(member=member).order_by('-entry_time').first()
+        if access is None or access.leaving_time:
+            access = Access.objects.create(member=member)
+        else:
+            access.leaving_time = timezone.now()
+            access.save()
+        return Response(serializers.serialize('json', [access]), status=status.HTTP_201_CREATED)

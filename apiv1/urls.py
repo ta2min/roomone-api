@@ -10,4 +10,5 @@ routers.register('members', views.MemberViewSet, 'members')
 
 urlpatterns = [
     path('', include(routers.urls)),
+    path('access/', views.AccessRecordView.as_view(), name='access-record'),
 ]
