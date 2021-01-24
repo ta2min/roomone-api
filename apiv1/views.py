@@ -1,13 +1,25 @@
+from django.core import serializers
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import viewsets, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from teams.models import (
     Team,
     Member,
 )
-from .serializers import TeamSerializer, MemberSerializer
+from access.models import (
+    Access,
+    Webhook,
+)
+from .serializers import (
+    AccessSerializer,
+    TeamSerializer,
+    MemberSerializer,
+    WebhookSerializer,
+)
 from .permissions import IsTeamOwner
+from access.utils.send_message import send_to_slack, send_to_teams
 
 
 class TeamViewSet(viewsets.ModelViewSet):
@@ -52,3 +64,32 @@ class MemberViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class AccessRecordView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = AccessSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        member = Member.objects.get(
+            team=serializer.validated_data.get('team'),
+            student_number=serializer.validated_data.get('student_number')
+        )
+
+        access = Access.objects.filter(member=member).order_by('-entry_time').first()
+        if access is None or access.leaving_time:
+            access = Access.objects.create(member=member)
+            msg = f'{member.name}さんが入室しました。'
+        else:
+            access.leaving_time = timezone.now()
+            access.save()
+            msg = f'{member.name}さんが退室しました。'
+        for webhook in Webhook.objects.filter(team=member.team):
+            if webhook.WebhookType(webhook.type).label == 'Slack':
+                send_to_slack(webhook.url, msg)
+            elif webhook.WebhookType(webhook.type).label == 'Teams':
+                send_to_teams(webhook.url, msg)
+        return Response(serializers.serialize('json', [access]), status=status.HTTP_201_CREATED)
+
+
+class WebhookViewSet(viewsets.ModelViewSet):
+    serializer_class = WebhookSerializer
