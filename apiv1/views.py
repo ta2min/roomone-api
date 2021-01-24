@@ -8,13 +8,18 @@ from teams.models import (
     Team,
     Member,
 )
-from access.models import Access
+from access.models import (
+    Access,
+    Webhook,
+)
 from .serializers import (
     AccessSerializer,
     TeamSerializer,
     MemberSerializer,
+    WebhookSerializer,
 )
 from .permissions import IsTeamOwner
+from access.utils.send_message import send_to_slack, send_to_teams
 
 
 class TeamViewSet(viewsets.ModelViewSet):
@@ -69,11 +74,22 @@ class AccessRecordView(APIView):
             team=serializer.validated_data.get('team'),
             student_number=serializer.validated_data.get('student_number')
         )
-        
+
         access = Access.objects.filter(member=member).order_by('-entry_time').first()
         if access is None or access.leaving_time:
             access = Access.objects.create(member=member)
+            msg = f'{member.name}さんが入室しました。'
         else:
             access.leaving_time = timezone.now()
             access.save()
+            msg = f'{member.name}さんが退室しました。'
+        for webhook in Webhook.objects.filter(team=member.team):
+            if webhook.WebhookType(webhook.type).label == 'Slack':
+                send_to_slack(webhook.url, msg)
+            elif webhook.WebhookType(webhook.type).label == 'Teams':
+                send_to_teams(webhook.url, msg)
         return Response(serializers.serialize('json', [access]), status=status.HTTP_201_CREATED)
+
+
+class WebhookViewSet(viewsets.ModelViewSet):
+    serializer_class = WebhookSerializer

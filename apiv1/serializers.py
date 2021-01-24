@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from teams.models import Team, Member
-from access.models import Access
+from access.models import Access, Webhook
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -22,3 +22,9 @@ class AccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Access
         fields = ('id', 'team', 'student_number', 'entry_time', 'leaving_time')
+    
+
+class WebhookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Webhook
+        fields = ('id', 'team', 'type', 'url')
